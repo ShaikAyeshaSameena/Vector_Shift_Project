@@ -1,8 +1,21 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 
 app = FastAPI()
+
+# -----------------------
+# CORS CONFIGURATION
+# -----------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # React frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # -----------------------
 # Data Models
@@ -32,9 +45,13 @@ def read_root():
 def parse_pipeline(pipeline: Pipeline):
     node_ids = {node.id for node in pipeline.nodes}
 
+    # Normalize frontend node types to backend logic
+    INPUT_TYPES = {"input", "customInput"}
+    OUTPUT_TYPES = {"output", "customOutput"}
+
     # Rule 1: At least one input and one output
-    has_input = any(node.type == "input" for node in pipeline.nodes)
-    has_output = any(node.type == "output" for node in pipeline.nodes)
+    has_input = any(node.type in INPUT_TYPES for node in pipeline.nodes)
+    has_output = any(node.type in OUTPUT_TYPES for node in pipeline.nodes)
 
     if not has_input or not has_output:
         return {
